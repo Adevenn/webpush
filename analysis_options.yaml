@@ -1,0 +1,9 @@
+include: package:lints/recommended.yaml
+
+analyzer:
+  exclude:
+    # Run once inside a temporary copy of Puffin's worker: it imports
+    # package:puffin_worker, which this package does not depend on.
+    # Lancé une fois dans une copie temporaire du worker de Puffin : il importe
+    # package:puffin_worker, dont ce paquet ne dépend pas.
+    - tool/puffin_reference/**
