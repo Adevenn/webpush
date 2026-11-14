@@ -1,4 +1,4 @@
-import 'dart:io';a
+import 'dart:io';
 
 /// An address block: first bytes and prefix length in bits.
 /// Un bloc d'adresses : premiers octets et longueur du préfixe en bits.
