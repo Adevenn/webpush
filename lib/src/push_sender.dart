@@ -23,17 +23,66 @@ const int _httpsPort = 443;
 /// Plus long TTL demandé à un service push (un jour).
 const Duration maxPushTtl = Duration(days: 1);
 
-/// True for an https endpoint of a known push service, on port 443.
-/// Vrai pour un endpoint https d'un service push connu, sur le port 443.
-bool isAllowedPushEndpoint(Uri endpoint) {
+/// The closed list of push services a sender may contact.
+/// La liste fermée des services push qu'un expéditeur peut contacter.
+class PushServices {
+  const PushServices({this.hosts = const {}, this.hostSuffixes = const []});
+
+  /// Apple + Mozilla / Apple + Mozilla.
+  static const defaults = PushServices(
+    hosts: pushHosts,
+    hostSuffixes: pushHostSuffixes,
+  );
+
+  /// Exact host names, e.g. `updates.push.services.mozilla.com`.
+  /// Noms d'hôte exacts, par exemple `updates.push.services.mozilla.com`.
+  final Set<String> hosts;
+
+  /// Name endings that start with a dot, e.g. `.push.apple.com`. One without
+  /// the leading dot is ignored (it would let `evilpush.apple.com` in).
+  /// Fins de nom commençant par un point, par exemple `.push.apple.com`. Une
+  /// fin sans point initial est ignorée (elle laisserait passer
+  /// `evilpush.apple.com`).
+  final List<String> hostSuffixes;
+
+  /// True when [host] (any case) is one of these services.
+  /// Vrai quand [host] (casse indifférente) est l'un de ces services.
+  bool allows(String host) {
+    final name = host.toLowerCase();
+    return hosts.any((h) => h.toLowerCase() == name) ||
+        hostSuffixes.any(
+          (suffix) =>
+              suffix.startsWith('.') && name.endsWith(suffix.toLowerCase()),
+        );
+  }
+}
+
+/// True for an https endpoint of one of [services], on port 443.
+/// Vrai pour un endpoint https d'un des [services], sur le port 443.
+bool isAllowedPushEndpoint(
+  Uri endpoint, [
+  PushServices services = PushServices.defaults,
+]) {
   if (endpoint.scheme != 'https' ||
       endpoint.userInfo.isNotEmpty ||
       endpoint.port != _httpsPort) {
     return false;
   }
-  final host = endpoint.host.toLowerCase();
-  return pushHosts.contains(host) ||
-      pushHostSuffixes.any((suffix) => host.endsWith(suffix));
+  return services.allows(endpoint.host);
+}
+
+/// `Urgency` header values (RFC 8030 §5.3).
+/// Valeurs de l'en-tête `Urgency` (RFC 8030 §5.3).
+enum PushUrgency {
+  veryLow('very-low'),
+  low('low'),
+  normal('normal'),
+  high('high');
+
+  const PushUrgency(this.header);
+
+  /// The value sent on the wire / La valeur envoyée.
+  final String header;
 }
 
 /// One browser's subscription (`PushSubscription.toJSON()` in the browser).
@@ -124,6 +173,7 @@ class PushSender {
     required this.subject,
     PushTransport? transport,
     DateTime Function()? clock,
+    this.services = PushServices.defaults,
     WebPushEncrypt? encrypt,
   }) : _transport = transport ?? safePushTransport,
        _clock = clock ?? DateTime.now,
@@ -134,18 +184,33 @@ class PushSender {
   /// `mailto:` contact given to the push services (RFC 8292 §2.1).
   /// Contact `mailto:` donné aux services push (RFC 8292 §2.1).
   final String subject;
+
+  /// Push services this sender may contact; any other endpoint is invalid.
+  /// Services push que cet expéditeur peut contacter ; tout autre endpoint
+  /// est invalide.
+  final PushServices services;
   final PushTransport _transport;
   final DateTime Function() _clock;
   final WebPushEncrypt _encrypt;
 
+  /// Sends [message]. The `Urgency` header is [urgency] when given, else
+  /// `high` if [urgent], else `normal`; giving both is an [ArgumentError].
+  /// Envoie [message]. L'en-tête `Urgency` vaut [urgency] s'il est donné,
+  /// sinon `high` si [urgent], sinon `normal` ; donner les deux lève une
+  /// [ArgumentError].
   Future<PushOutcome> send(
     PushSubscription subscription,
     PushMessage message, {
     required Duration ttl,
     bool urgent = false,
+    PushUrgency? urgency,
   }) async {
+    if (urgent && urgency != null) {
+      throw ArgumentError('Give either urgent or urgency, not both');
+    }
+    final level = urgency ?? (urgent ? PushUrgency.high : PushUrgency.normal);
     final endpoint = Uri.tryParse(subscription.endpoint);
-    if (endpoint == null || !isAllowedPushEndpoint(endpoint)) {
+    if (endpoint == null || !isAllowedPushEndpoint(endpoint, services)) {
       return PushOutcome.invalid;
     }
     final List<int> body;
@@ -169,7 +234,7 @@ class PushSender {
           _clock(),
         ),
         'ttl': '$seconds',
-        'urgency': urgent ? 'high' : 'normal',
+        'urgency': level.header,
         'content-encoding': 'aes128gcm',
         HttpHeaders.contentTypeHeader: 'application/octet-stream',
       }, body);
