@@ -104,6 +104,17 @@ typedef PushTransport = Future<int> Function(
   List<int> body,
 );
 
+/// Encrypts a message for one subscription; [encryptWebPush] by default,
+/// with a random salt and sender key. Tests give fixed ones to freeze bytes.
+/// Chiffre un message pour un abonnement ; [encryptWebPush] par défaut, avec
+/// sel et clé d'expéditeur aléatoires. Les tests les fixent pour figer les
+/// octets.
+typedef WebPushEncrypt = List<int> Function({
+  required List<int> uaPublic,
+  required List<int> authSecret,
+  required List<int> plaintext,
+});
+
 /// Encrypts and sends Web Push messages, signed with the sender's VAPID key.
 /// Chiffre et envoie les messages Web Push, signés par la clé VAPID de
 /// l'expéditeur.
@@ -113,8 +124,10 @@ class PushSender {
     required this.subject,
     PushTransport? transport,
     DateTime Function()? clock,
+    WebPushEncrypt? encrypt,
   }) : _transport = transport ?? safePushTransport,
-       _clock = clock ?? DateTime.now;
+       _clock = clock ?? DateTime.now,
+       _encrypt = encrypt ?? encryptWebPush;
 
   final VapidKeys keys;
 
@@ -123,6 +136,7 @@ class PushSender {
   final String subject;
   final PushTransport _transport;
   final DateTime Function() _clock;
+  final WebPushEncrypt _encrypt;
 
   Future<PushOutcome> send(
     PushSubscription subscription,
@@ -136,7 +150,7 @@ class PushSender {
     }
     final List<int> body;
     try {
-      body = encryptWebPush(
+      body = _encrypt(
         uaPublic: decodeBase64Url(subscription.p256dh),
         authSecret: decodeBase64Url(subscription.auth),
         plaintext: message.encode(),

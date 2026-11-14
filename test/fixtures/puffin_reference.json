@@ -1,0 +1,76 @@
+{
+  "source": {
+    "repository": "Puffin",
+    "commit": "7f5163f8723111a42220073df265b6743803aaa2",
+    "files": "worker/lib/src/{push_crypto,vapid,push_sender}.dart"
+  },
+  "inputs": {
+    "vapidPrivate": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA",
+    "subject": "mailto:contact@example.org",
+    "now": "2026-11-02T12:00:00.000Z",
+    "uaPublic": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4",
+    "authSecret": "BTBZMqHH6r4Tts7J_aSIgg",
+    "senderPrivate": "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw",
+    "salt": "DGv6ra1nlYgDCS1FRnbzlw"
+  },
+  "cases": [
+    {
+      "name": "apple-normal",
+      "endpoint": "https://web.push.apple.com/QExampleToken",
+      "ttlSeconds": 7200,
+      "urgent": false,
+      "message": {
+        "title": "Sauvegarde terminée",
+        "body": "Tout est à jour ✅",
+        "tag": "backup:nightly",
+        "tab": "planning"
+      },
+      "headers": {
+        "authorization": "vapid t=eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJhdWQiOiJodHRwczovL3dlYi5wdXNoLmFwcGxlLmNvbSIsImV4cCI6MTc5MzY2NDAwMCwic3ViIjoibWFpbHRvOmNvbnRhY3RAZXhhbXBsZS5vcmcifQ.zg6pd2wrIq43qXfFBel8wRZioY3TXdtOE457T4lTF6dsweRN9PyH9AkPtK2VERKQ53xZ2e83cCrDbRHKK3JX4w, k=BFFcPW6545a5BNP-yn9U_c0MwemXvzddylFa0KbDtANfRTa-OlDzGPv5pUdZAqIhUCvvDVfgjFOyzApW8X2fk1Q",
+        "ttl": "7200",
+        "urgency": "normal",
+        "content-encoding": "aes128gcm",
+        "content-type": "application/octet-stream"
+      },
+      "body": "DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_e3c9cFr7_NBuegO8MrEBY_HfgsPtBD9uI-na_SL-yB7bdUTw6QjSYYg7n2l_Kk09ZrCVY6wqmmOv3CS7aNmv4uWD7hYRAUqvXerp5WDVP9vg53z1W8K4W-ZBGPBl2VttvrUDGQGdF3-x6QIpTol7ClhBl-uoG7g"
+    },
+    {
+      "name": "apple-urgent-ttl-clamped",
+      "endpoint": "https://web.push.apple.com/QExampleToken",
+      "ttlSeconds": 259200,
+      "urgent": true,
+      "message": {
+        "title": "⏰ Minuteur",
+        "body": "Fini",
+        "tag": "t:abc"
+      },
+      "headers": {
+        "authorization": "vapid t=eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJhdWQiOiJodHRwczovL3dlYi5wdXNoLmFwcGxlLmNvbSIsImV4cCI6MTc5MzY2NDAwMCwic3ViIjoibWFpbHRvOmNvbnRhY3RAZXhhbXBsZS5vcmcifQ.zg6pd2wrIq43qXfFBel8wRZioY3TXdtOE457T4lTF6dsweRN9PyH9AkPtK2VERKQ53xZ2e83cCrDbRHKK3JX4w, k=BFFcPW6545a5BNP-yn9U_c0MwemXvzddylFa0KbDtANfRTa-OlDzGPv5pUdZAqIhUCvvDVfgjFOyzApW8X2fk1Q",
+        "ttl": "86400",
+        "urgency": "high",
+        "content-encoding": "aes128gcm",
+        "content-type": "application/octet-stream"
+      },
+      "body": "DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_e3c9cFr7_NBueMQHJ-mhW83DwsK5HSIXH8XcYmPiqCdLWUDFhTCzOVwawlF3b2lobDKcFg5H92E_y_tlE_QkOnPiUg-0"
+    },
+    {
+      "name": "mozilla-negative-ttl",
+      "endpoint": "https://updates.push.services.mozilla.com/wpush/v2/abc",
+      "ttlSeconds": -300,
+      "urgent": false,
+      "message": {
+        "title": "T",
+        "body": "B",
+        "tag": "x"
+      },
+      "headers": {
+        "authorization": "vapid t=eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJhdWQiOiJodHRwczovL3VwZGF0ZXMucHVzaC5zZXJ2aWNlcy5tb3ppbGxhLmNvbSIsImV4cCI6MTc5MzY2NDAwMCwic3ViIjoibWFpbHRvOmNvbnRhY3RAZXhhbXBsZS5vcmcifQ.Rn6cNxo08K4mumZhrPnpUQGykJKAXc-BoYaIsEFMmG2Xy5Uo29U6u1xGhccPHjQ1iIG25Hfmo0913K59bajLEA, k=BFFcPW6545a5BNP-yn9U_c0MwemXvzddylFa0KbDtANfRTa-OlDzGPv5pUdZAqIhUCvvDVfgjFOyzApW8X2fk1Q",
+        "ttl": "0",
+        "urgency": "normal",
+        "content-encoding": "aes128gcm",
+        "content-type": "application/octet-stream"
+      },
+      "body": "DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_e3c9cFr7_NBueh6xV-EdQ-Xym7_l3SIXH53kbw-CyU7bCPOR3kGjYuGKAs_0Ixr-OhiE"
+    }
+  ]
+}
